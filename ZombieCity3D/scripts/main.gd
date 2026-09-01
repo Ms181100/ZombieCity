@@ -23,7 +23,7 @@ var story_text: Label
 var story_step := 0
 
 func _ready() -> void:
-	build_world(); build_player(); build_ui(); load_settings()
+	build_ui(); load_settings(); build_world(); build_player()
 	for i in range(9): spawn_zombie(i % 3, Vector3(-7.0 + (i%5)*3.0, 0, -10.0-i*4.0))
 
 func material(c:Color)->StandardMaterial3D:
