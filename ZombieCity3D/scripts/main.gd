@@ -17,9 +17,14 @@ var score = 0
 var kills = 0
 var started = false
 var zombies = []
+var fire_audio
+var hit_audio
+var reload_audio
+var zombie_audio
 
 func _ready():
 	build_ui()
+	build_audio()
 	build_world()
 	build_player()
 	for index in range(9):
@@ -31,6 +36,26 @@ func make_material(color_value):
 	result.albedo_color = color_value
 	result.roughness = 0.9
 	return result
+
+func add_body_part(parent_node, part_size, part_position, color_value):
+	var part = MeshInstance3D.new()
+	var part_mesh = BoxMesh.new()
+	part_mesh.size = part_size
+	part_mesh.material = make_material(color_value)
+	part.mesh = part_mesh
+	part.position = part_position
+	parent_node.add_child(part)
+	return part
+
+func add_head(parent_node, head_position, color_value):
+	var head = MeshInstance3D.new()
+	var head_mesh = SphereMesh.new()
+	head_mesh.radius = 0.28
+	head_mesh.height = 0.56
+	head_mesh.material = make_material(color_value)
+	head.mesh = head_mesh
+	head.position = head_position
+	parent_node.add_child(head)
 
 func add_box(position, size, color_value, add_collision = true):
 	var mesh_node = MeshInstance3D.new()
@@ -83,13 +108,13 @@ func build_player():
 	shape.radius = 0.42
 	collision.shape = shape
 	player.add_child(collision)
-	var body_mesh = MeshInstance3D.new()
-	var capsule = CapsuleMesh.new()
-	capsule.height = 1.8
-	capsule.radius = 0.42
-	capsule.material = make_material(Color("254a68"))
-	body_mesh.mesh = capsule
-	player.add_child(body_mesh)
+	add_body_part(player, Vector3(0.72, 0.82, 0.34), Vector3(0.0, 0.35, 0.0), Color("263f58"))
+	add_head(player, Vector3(0.0, 1.02, 0.0), Color("c58f6a"))
+	add_body_part(player, Vector3(0.22, 0.82, 0.24), Vector3(-0.22, -0.48, 0.0), Color("20252b"))
+	add_body_part(player, Vector3(0.22, 0.82, 0.24), Vector3(0.22, -0.48, 0.0), Color("20252b"))
+	add_body_part(player, Vector3(0.2, 0.78, 0.22), Vector3(-0.48, 0.32, 0.0), Color("263f58"))
+	add_body_part(player, Vector3(0.2, 0.78, 0.22), Vector3(0.48, 0.32, 0.0), Color("263f58"))
+	add_body_part(player, Vector3(0.12, 0.16, 0.9), Vector3(0.43, 0.25, -0.48), Color("27292b"))
 	pivot = Node3D.new()
 	pivot.position = Vector3(0.0, 1.45, 0.0)
 	player.add_child(pivot)
@@ -113,13 +138,17 @@ func spawn_zombie(kind, location):
 	shape.radius = [0.38, 0.33, 0.62][kind]
 	collision.shape = shape
 	zombie.add_child(collision)
-	var mesh_node = MeshInstance3D.new()
-	var mesh = CapsuleMesh.new()
-	mesh.height = shape.height
-	mesh.radius = shape.radius
-	mesh.material = make_material([Color("435b3b"), Color("74473c"), Color("303e34")][kind])
-	mesh_node.mesh = mesh
-	zombie.add_child(mesh_node)
+	var clothes = [Color("3f543c"), Color("6a4038"), Color("303b34")][kind]
+	var skin = [Color("77806a"), Color("86635b"), Color("566657")][kind]
+	var scale_value = [1.0, 0.9, 1.25][kind]
+	add_body_part(zombie, Vector3(0.72, 0.82, 0.34) * scale_value, Vector3(0.0, 0.35, 0.0), clothes)
+	add_head(zombie, Vector3(0.0, 1.02 * scale_value, 0.0), skin)
+	add_body_part(zombie, Vector3(0.2, 0.85, 0.22) * scale_value, Vector3(-0.22, -0.48, 0.0), Color("252525"))
+	add_body_part(zombie, Vector3(0.2, 0.85, 0.22) * scale_value, Vector3(0.22, -0.48, 0.0), Color("252525"))
+	var left_arm = add_body_part(zombie, Vector3(0.18, 0.85, 0.2) * scale_value, Vector3(-0.5, 0.32, -0.22), skin)
+	var right_arm = add_body_part(zombie, Vector3(0.18, 0.85, 0.2) * scale_value, Vector3(0.5, 0.32, -0.22), skin)
+	left_arm.rotation_degrees.x = 62.0
+	right_arm.rotation_degrees.x = 62.0
 
 func add_label(parent, text_value, position, size, font_size):
 	var label = Label.new()
@@ -164,6 +193,18 @@ func build_ui():
 	menu.position = Vector2.ZERO
 	menu.size = Vector2(1280.0, 720.0)
 	layer.add_child(menu)
+	var title_background = TextureRect.new()
+	title_background.texture = load("res://assets/backgrounds/germany_fallen_title.jpg")
+	title_background.position = Vector2.ZERO
+	title_background.size = Vector2(1280.0, 720.0)
+	title_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	title_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	menu.add_child(title_background)
+	var title_shadow = ColorRect.new()
+	title_shadow.color = Color(0.0, 0.0, 0.0, 0.42)
+	title_shadow.position = Vector2.ZERO
+	title_shadow.size = Vector2(1280.0, 720.0)
+	menu.add_child(title_shadow)
 	add_label(menu, "ZOMBIE CITY", Vector2(0.0, 115.0), Vector2(1280.0, 90.0), 68)
 	add_label(menu, "DEUTSCHLAND IST GEFALLEN", Vector2(0.0, 220.0), Vector2(1280.0, 45.0), 25)
 	var age = add_label(menu, "AB 18 - STARKE GEWALTDARSTELLUNG", Vector2(0.0, 280.0), Vector2(1280.0, 40.0), 20)
@@ -206,6 +247,7 @@ func end_move(direction):
 func start_game():
 	started = true
 	menu.visible = false
+	zombie_audio.play()
 
 func toggle_settings():
 	settings.visible = not settings.visible
@@ -214,6 +256,7 @@ func reload_weapon():
 	var amount = min(12 - ammo, reserve)
 	ammo += amount
 	reserve -= amount
+	reload_audio.play()
 	update_hud()
 
 func shoot():
@@ -223,11 +266,13 @@ func shoot():
 		reload_weapon()
 		return
 	ammo -= 1
+	fire_audio.play()
 	var ray_end = camera.global_position - camera.global_basis.z * 80.0
 	var query = PhysicsRayQueryParameters3D.create(camera.global_position, ray_end)
 	query.exclude = [player]
 	var hit = get_world_3d().direct_space_state.intersect_ray(query)
 	if hit and hit.collider in zombies:
+		hit_audio.play()
 		var zombie = hit.collider
 		zombie.set_meta("hp", int(zombie.get_meta("hp")) - 50)
 		if int(zombie.get_meta("hp")) <= 0:
@@ -236,6 +281,37 @@ func shoot():
 			score += 100
 			kills += 1
 	update_hud()
+
+func make_sound(frequency, duration, noise_amount):
+	var stream = AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = 22050
+	var sample_count = int(22050.0 * duration)
+	var bytes = PackedByteArray()
+	bytes.resize(sample_count * 2)
+	for sample_index in range(sample_count):
+		var time_value = float(sample_index) / 22050.0
+		var fade = 1.0 - float(sample_index) / float(sample_count)
+		var wave = sin(TAU * frequency * time_value)
+		var noise = randf_range(-1.0, 1.0) * noise_amount
+		var value = int(clamp((wave * (1.0 - noise_amount) + noise) * fade, -1.0, 1.0) * 32767.0)
+		bytes[sample_index * 2] = value & 255
+		bytes[sample_index * 2 + 1] = (value >> 8) & 255
+	stream.data = bytes
+	return stream
+
+func add_audio(stream, volume):
+	var audio = AudioStreamPlayer.new()
+	audio.stream = stream
+	audio.volume_db = volume
+	add_child(audio)
+	return audio
+
+func build_audio():
+	fire_audio = add_audio(make_sound(90.0, 0.16, 0.72), -3.0)
+	hit_audio = add_audio(make_sound(55.0, 0.12, 0.55), -7.0)
+	reload_audio = add_audio(make_sound(720.0, 0.13, 0.18), -8.0)
+	zombie_audio = add_audio(make_sound(74.0, 0.75, 0.38), -10.0)
 
 func _unhandled_input(event):
 	if event is InputEventScreenDrag and event.position.x > 400.0 and not settings.visible:
