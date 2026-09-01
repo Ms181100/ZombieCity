@@ -1,6 +1,10 @@
-# Zombie City
+# Zombie City – Version 2
 
 Offline spielbarer Android-3D-Raycaster mit Touch-Steuerung.
+
+Version 2 ergänzt ein Startmenü, eine Pistole, ein Sturmgewehr, Waffenwechsel,
+unterschiedliche Magazine und Feuerraten, Treffer-/Bluteffekte und eine dunklere
+Stadtatmosphäre.
 
 ## Steuerung
 
@@ -8,6 +12,7 @@ Offline spielbarer Android-3D-Raycaster mit Touch-Steuerung.
 - Rechte Bildschirmhälfte ziehen: umsehen
 - Roter Knopf: schießen
 - Gelber Knopf: nachladen
+- Grauer Knopf: Waffe wechseln
 - Nach Game Over in die Bildschirmmitte tippen: Neustart
 
 ## Bauen
