@@ -17,7 +17,7 @@ jobs:
       - name: Android Java SDK konfigurieren
         run: |
           mkdir -p ~/.config/godot
-          printf '[gd_resource format=3]\n\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\n' > ~/.config/godot/editor_settings-4.7.tres
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\n' > ~/.config/godot/editor_settings-4.7.tres
       - name: APK exportieren
         working-directory: ZombieCity3D
         run: mkdir -p build && godot --headless --export-debug Android build/ZombieCity3D.apk
