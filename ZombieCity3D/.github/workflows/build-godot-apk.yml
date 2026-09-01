@@ -1,0 +1,24 @@
+name: Zombie City 3D APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ZombieCity3D/**"
+      - ".github/workflows/build-godot-apk.yml"
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export templates vorbereiten
+        run: mkdir -p ~/.local/share/godot/export_templates && mv /root/.local/share/godot/export_templates/4.7.2.stable ~/.local/share/godot/export_templates/4.7.2.stable || true
+      - name: APK exportieren
+        working-directory: ZombieCity3D
+        run: mkdir -p build && godot --headless --export-debug Android build/ZombieCity3D.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZombieCity3D-APK
+          path: ZombieCity3D/build/ZombieCity3D.apk
+          if-no-files-found: error
