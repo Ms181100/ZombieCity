@@ -16,6 +16,11 @@ jobs:
       - name: Android-Werkzeuge einrichten
         uses: android-actions/setup-android@v3
 
+      - name: Passende Android-SDK-Pakete installieren
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
       - name: Godot-Projekt als APK exportieren
         id: export
         uses: firebelley/godot-export@v8.0.0
