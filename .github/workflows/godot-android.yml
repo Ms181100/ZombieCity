@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PROJECT_DIR: LahnInfectionGodot
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
@@ -19,16 +22,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect Godot project
-        id: project
+      - name: Verify canonical project
         shell: bash
         run: |
           set -e
-          PROJECT_FILE=$(find . -name project.godot -not -path './.git/*' | head -n 1)
-          test -n "$PROJECT_FILE"
-          PROJECT_DIR=$(dirname "$PROJECT_FILE")
-          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Godot project: $PROJECT_DIR"
+          test -f "$PROJECT_DIR/project.godot"
+          test -f "$PROJECT_DIR/main.tscn"
+          grep -q 'res://scripts/main.gd' "$PROJECT_DIR/main.tscn"
+          grep -q 'LAHN-INFECTION' "$PROJECT_DIR/scripts/mobile_hud.gd"
+          echo "Building ONLY: $PROJECT_DIR"
+          sha256sum "$PROJECT_DIR/scripts/main.gd" "$PROJECT_DIR/scripts/mobile_hud.gd"
 
       - name: Install Java
         uses: actions/setup-java@v5
@@ -47,7 +50,6 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           adb start-server
-          adb devices
 
       - name: Install Godot 4.6.1 and export templates
         shell: bash
@@ -72,26 +74,28 @@ jobs:
           EOF
           godot --version
 
-      - name: Validate project scripts
+      - name: Validate canonical project
         shell: bash
-        working-directory: ${{ steps.project.outputs.dir }}
+        working-directory: LahnInfectionGodot
         run: godot --headless --editor --quit-after 10
 
-      - name: Export APK
+      - name: Export canonical APK
         shell: bash
-        working-directory: ${{ steps.project.outputs.dir }}
+        working-directory: LahnInfectionGodot
         run: |
           set -e
           adb start-server
+          rm -rf build
           mkdir -p build
-          godot --headless --path . --export-debug Android build/Lahn-Infection-debug.apk
-          test -s build/Lahn-Infection-debug.apk
-          ls -lh build/Lahn-Infection-debug.apk
+          godot --headless --path . --export-debug Android build/Lahn-Infection-Alpha-0.2-Build16.apk
+          test -s build/Lahn-Infection-Alpha-0.2-Build16.apk
+          sha256sum build/Lahn-Infection-Alpha-0.2-Build16.apk
+          ls -lh build/Lahn-Infection-Alpha-0.2-Build16.apk
 
-      - name: Upload APK
+      - name: Upload canonical APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lahn-Infection-Android-APK
-          path: ${{ steps.project.outputs.dir }}/build/Lahn-Infection-debug.apk
+          name: Lahn-Infection-Alpha-0.2-Build16-CANONICAL
+          path: LahnInfectionGodot/build/Lahn-Infection-Alpha-0.2-Build16.apk
           if-no-files-found: error
           retention-days: 14
