@@ -46,6 +46,8 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          adb start-server
+          adb devices
 
       - name: Install Godot 4.6.1 and export templates
         shell: bash
@@ -80,6 +82,7 @@ jobs:
         working-directory: ${{ steps.project.outputs.dir }}
         run: |
           set -e
+          adb start-server
           mkdir -p build
           godot --headless --path . --export-debug Android build/Lahn-Infection-debug.apk
           test -s build/Lahn-Infection-debug.apk
