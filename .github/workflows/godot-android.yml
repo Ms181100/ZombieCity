@@ -69,8 +69,8 @@ jobs:
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
-          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
-          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = String("$ANDROID_SDK_ROOT")
+          export/android/java_sdk_path = String("$JAVA_HOME")
           EOF
           godot --version
 
@@ -87,15 +87,15 @@ jobs:
           adb start-server
           rm -rf build
           mkdir -p build
-          godot --headless --path . --export-debug Android build/Lahn-Infection-Alpha-0.2-Build16.apk
-          test -s build/Lahn-Infection-Alpha-0.2-Build16.apk
-          sha256sum build/Lahn-Infection-Alpha-0.2-Build16.apk
-          ls -lh build/Lahn-Infection-Alpha-0.2-Build16.apk
+          godot --headless --path . --export-debug Android build/Lahn-Infection-Alpha-0.2-Build18.apk
+          test -s build/Lahn-Infection-Alpha-0.2-Build18.apk
+          sha256sum build/Lahn-Infection-Alpha-0.2-Build18.apk
+          ls -lh build/Lahn-Infection-Alpha-0.2-Build18.apk
 
       - name: Upload canonical APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lahn-Infection-Alpha-0.2-Build16-CANONICAL
-          path: LahnInfectionGodot/build/Lahn-Infection-Alpha-0.2-Build16.apk
+          name: Lahn-Infection-Alpha-0.2-Build18-CANONICAL
+          path: LahnInfectionGodot/build/Lahn-Infection-Alpha-0.2-Build18.apk
           if-no-files-found: error
           retention-days: 14
