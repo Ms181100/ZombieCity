@@ -13,6 +13,12 @@ jobs:
       - name: Repository laden
         uses: actions/checkout@v5
 
+      - name: Java 17 fuer Godot einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Android-Werkzeuge einrichten
         uses: android-actions/setup-android@v3
 
@@ -20,6 +26,24 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          test -x "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner"
+          test -f "$ANDROID_SDK_ROOT/platforms/android-34/android.jar"
+          java -version
+
+      - name: Android-Debugsignatur erzeugen
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -dname "CN=Android Debug,O=Lahn Infection,C=DE" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000
+          fi
 
       - name: Godot-Projekt als APK exportieren
         id: export
@@ -31,6 +55,7 @@ jobs:
           presets_to_export: Android
           export_debug: true
           cache: true
+          verbose: true
 
       - name: APK als Download bereitstellen
         uses: actions/upload-artifact@v4
