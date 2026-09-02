@@ -15,10 +15,21 @@ Eigenständiger Neubau nach dem GDD: Third-Person Story-Survival in Mittelhessen
 - Loot-, Tür-, Generator-, Funk-, Bett- und Ablenkungs-Interaktionen
 - lokale Safehouse-Spielstände mit atomarem Dateiaustausch
 - URP und AI Navigation als Paketabhängigkeiten
+- automatisch erzeugte spielbare Android-Prototypszene
+- Touch-Bewegung, Wischkamera, Schießen, Nachladen und Treffer
+- drei sicht- und spielbar unterschiedliche Zombieklassen
+- prozedurale Testgeräusche für Schuss, Treffer und Nachladen
+- deutsche B49-Testumgebung mit Apotheke und Feuerwehr
 
 ## Unity-Version
 
 Ziel: Unity 6 LTS, URP, Android Build Support, neues Input System.
+
+## Prototyp starten
+
+Das Projekt in Unity 6 öffnen. Beim ersten Import erzeugt das Editor-Skript automatisch
+`Assets/LahnInfection/Scenes/LahnInfectionPrototype.unity`, trägt sie in die Build Settings ein
+und setzt App-Name, Paketkennung, Querformat und Android-Mindestversion. Danach Play drücken.
 
 ## Nächste Projektstufe
 
