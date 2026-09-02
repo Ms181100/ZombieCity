@@ -31,6 +31,13 @@ Das Projekt in Unity 6 öffnen. Beim ersten Import erzeugt das Editor-Skript aut
 `Assets/LahnInfection/Scenes/LahnInfectionPrototype.unity`, trägt sie in die Build Settings ein
 und setzt App-Name, Paketkennung, Querformat und Android-Mindestversion. Danach Play drücken.
 
+## APK automatisch bauen
+
+Der Workflow `Lahn-Infection Android APK` baut das Projekt auf GitHub als APK und stellt
+`Lahn-Infection-Android-APK` als Download-Artefakt bereit. Dafür müssen im Repository einmalig
+die geschützten GitHub-Actions-Secrets `UNITY_LICENSE`, `UNITY_EMAIL` und `UNITY_PASSWORD`
+hinterlegt werden. Die Unity-Personal-Lizenzdatei wird laut GameCI einmal über Unity Hub erzeugt.
+
 ## Nächste Projektstufe
 
 Die erste spielbare Mission „Das letzte Signal“ wird als eigene Szene aufgebaut:

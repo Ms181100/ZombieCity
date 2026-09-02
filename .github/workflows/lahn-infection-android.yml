@@ -1,0 +1,43 @@
+name: Lahn-Infection Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Unity Android APK bauen
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Unity-Cache wiederherstellen
+        uses: actions/cache@v4
+        with:
+          path: LahnInfectionUnity/Library
+          key: unity-lahn-android-${{ hashFiles('LahnInfectionUnity/Packages/**', 'LahnInfectionUnity/ProjectSettings/**') }}
+          restore-keys: |
+            unity-lahn-android-
+
+      - name: Android-APK mit Unity bauen
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: LahnInfectionUnity
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildName: Lahn-Infection
+          versioning: Semantic
+
+      - name: APK als Download bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lahn-Infection-Android-APK
+          path: build/Android/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
