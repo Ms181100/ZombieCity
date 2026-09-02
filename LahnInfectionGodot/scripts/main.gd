@@ -2,13 +2,13 @@ extends Node3D
 
 const Zombie = preload("res://scripts/zombie.gd")
 const Joystick = preload("res://scripts/joystick.gd")
+const MobileHUD = preload("res://scripts/mobile_hud.gd")
 
 var player: CharacterBody3D
 var camera: Camera3D
 var camera_pivot: Node3D
 var joystick: Control
-var hud: Label
-var objective_label: Label
+var mobile_hud: CanvasLayer
 var settings_panel: PanelContainer
 var sound_player: AudioStreamPlayer
 var sound_playback: AudioStreamGeneratorPlayback
@@ -25,6 +25,7 @@ var paused := false
 var sound_enabled := true
 var aim_assist := true
 var sensitivity := 0.0045
+var dodge_cooldown := 0.0
 
 var objectives := [
 	"Verlasse den Keller und finde die B49.",
@@ -83,12 +84,14 @@ func _build_player() -> void:
 	player.position = Vector3(0, 1.1, -7)
 	var collision := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.45; capsule.height = 1.8
+	capsule.radius = 0.45
+	capsule.height = 1.8
 	collision.shape = capsule
 	player.add_child(collision)
 	var body := MeshInstance3D.new()
 	var body_mesh := CapsuleMesh.new()
-	body_mesh.radius = 0.45; body_mesh.height = 1.8
+	body_mesh.radius = 0.45
+	body_mesh.height = 1.8
 	body.mesh = body_mesh
 	body.material_override = _material(Color("284e72"), 0.8)
 	player.add_child(body)
@@ -112,57 +115,77 @@ func _build_audio() -> void:
 	sound_playback = sound_player.get_stream_playback()
 
 func _build_ui() -> void:
-	var canvas := CanvasLayer.new()
-	add_child(canvas)
+	var controls := CanvasLayer.new()
+	controls.layer = 10
+	add_child(controls)
 	joystick = Joystick.new()
 	joystick.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	canvas.add_child(joystick)
-	hud = Label.new()
-	hud.position = Vector2(18, 14)
-	hud.add_theme_font_size_override("font_size", 23)
-	canvas.add_child(hud)
-	objective_label = Label.new()
-	objective_label.position = Vector2(18, 48)
-	objective_label.size = Vector2(850, 70)
-	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective_label.add_theme_font_size_override("font_size", 20)
-	canvas.add_child(objective_label)
-	var fire := _button("FEUER", Vector2(-145, -145), Vector2(122, 122), Color("9d2929"))
-	fire.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	fire.pressed.connect(fire_weapon)
-	canvas.add_child(fire)
-	var reload := _button("LADEN", Vector2(-270, -105), Vector2(105, 82), Color("98761f"))
-	reload.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	reload.pressed.connect(reload_weapon)
-	canvas.add_child(reload)
-	var options := _button("OPTIONEN", Vector2(-175, 18), Vector2(150, 58), Color("252b33"))
-	options.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	options.pressed.connect(toggle_settings)
-	canvas.add_child(options)
-	_build_settings(canvas)
-	var crosshair := Label.new()
-	crosshair.text = "+"
-	crosshair.set_anchors_preset(Control.PRESET_CENTER)
-	crosshair.position = Vector2(-8, -16)
-	crosshair.add_theme_font_size_override("font_size", 28)
-	canvas.add_child(crosshair)
+	controls.add_child(joystick)
 
-func _build_settings(canvas: CanvasLayer) -> void:
+	mobile_hud = MobileHUD.new()
+	mobile_hud.layer = 20
+	mobile_hud.fire_pressed.connect(fire_weapon)
+	mobile_hud.reload_pressed.connect(reload_weapon)
+	mobile_hud.dodge_pressed.connect(dodge)
+	mobile_hud.interact_pressed.connect(interact)
+	mobile_hud.pause_pressed.connect(toggle_settings)
+	add_child(mobile_hud)
+	_build_settings()
+
+func _build_settings() -> void:
+	var menu_layer := CanvasLayer.new()
+	menu_layer.layer = 30
+	add_child(menu_layer)
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-245, -210)
-	settings_panel.size = Vector2(490, 420)
+	settings_panel.position = Vector2(-260, -230)
+	settings_panel.size = Vector2(520, 460)
 	settings_panel.visible = false
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.02, 0.025, 0.035, 0.96)
+	panel_style.corner_radius_top_left = 18
+	panel_style.corner_radius_top_right = 18
+	panel_style.corner_radius_bottom_left = 18
+	panel_style.corner_radius_bottom_right = 18
+	settings_panel.add_theme_stylebox_override("panel", panel_style)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 18)
 	settings_panel.add_child(box)
-	var title := Label.new(); title.text = "EINSTELLUNGEN"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 30); box.add_child(title)
-	var sound_toggle := CheckButton.new(); sound_toggle.text = "Soundeffekte"; sound_toggle.button_pressed = true; sound_toggle.toggled.connect(func(on): sound_enabled = on); box.add_child(sound_toggle)
-	var aim_toggle := CheckButton.new(); aim_toggle.text = "Zielhilfe"; aim_toggle.button_pressed = true; aim_toggle.toggled.connect(func(on): aim_assist = on); box.add_child(aim_toggle)
-	var sensitivity_label := Label.new(); sensitivity_label.text = "Kamera-Empfindlichkeit"; box.add_child(sensitivity_label)
-	var slider := HSlider.new(); slider.min_value = 0.002; slider.max_value = 0.009; slider.step = 0.0005; slider.value = sensitivity; slider.value_changed.connect(func(value): sensitivity = value); box.add_child(slider)
-	var back := Button.new(); back.text = "ZURÜCK ZUM SPIEL"; back.custom_minimum_size.y = 64; back.pressed.connect(toggle_settings); box.add_child(back)
-	canvas.add_child(settings_panel)
+	var title := Label.new()
+	title.text = "LAHN-INFECTION"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 28)
+	box.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "PAUSE / EINSTELLUNGEN"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(subtitle)
+	var sound_toggle := CheckButton.new()
+	sound_toggle.text = "Soundeffekte"
+	sound_toggle.button_pressed = true
+	sound_toggle.toggled.connect(func(on): sound_enabled = on)
+	box.add_child(sound_toggle)
+	var aim_toggle := CheckButton.new()
+	aim_toggle.text = "Zielhilfe"
+	aim_toggle.button_pressed = true
+	aim_toggle.toggled.connect(func(on): aim_assist = on)
+	box.add_child(aim_toggle)
+	var sensitivity_label := Label.new()
+	sensitivity_label.text = "Kamera-Empfindlichkeit"
+	box.add_child(sensitivity_label)
+	var slider := HSlider.new()
+	slider.min_value = 0.002
+	slider.max_value = 0.009
+	slider.step = 0.0005
+	slider.value = sensitivity
+	slider.value_changed.connect(func(value): sensitivity = value)
+	box.add_child(slider)
+	var back := Button.new()
+	back.text = "WEITERSPIELEN"
+	back.custom_minimum_size.y = 64
+	back.pressed.connect(toggle_settings)
+	box.add_child(back)
+	menu_layer.add_child(settings_panel)
 
 func _spawn_zombies() -> void:
 	for index in range(15):
@@ -173,7 +196,9 @@ func _spawn_zombies() -> void:
 		zombie.setup(kind, player, self)
 
 func _physics_process(delta: float) -> void:
-	if paused: return
+	if paused:
+		return
+	dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
 	var keyboard := Vector2(
 		float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)),
 		float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
@@ -201,9 +226,11 @@ func _input(event: InputEvent) -> void:
 		fire_weapon()
 
 func fire_weapon() -> void:
-	if paused: return
+	if paused:
+		return
 	if ammo <= 0:
-		play_sound("empty"); return
+		play_sound("empty")
+		return
 	ammo -= 1
 	play_sound("shot")
 	var center := get_viewport().get_visible_rect().size * 0.5
@@ -217,15 +244,36 @@ func fire_weapon() -> void:
 	_update_hud()
 
 func reload_weapon() -> void:
-	if paused: return
+	if paused:
+		return
 	var amount: int = min(12 - ammo, reserve)
-	ammo += amount; reserve -= amount
+	ammo += amount
+	reserve -= amount
 	play_sound("reload")
 	_update_hud()
+
+func dodge() -> void:
+	if paused or dodge_cooldown > 0.0:
+		return
+	var input_vector: Vector2 = joystick.value
+	var dodge_direction := (player.transform.basis * Vector3(input_vector.x, 0, input_vector.y)).normalized()
+	if dodge_direction.length() < 0.1:
+		dodge_direction = -player.transform.basis.z
+	player.velocity.x = dodge_direction.x * 10.5
+	player.velocity.z = dodge_direction.z * 10.5
+	player.move_and_slide()
+	dodge_cooldown = 0.8
+
+func interact() -> void:
+	if paused:
+		return
+	_update_mission_by_position()
 
 func hurt_player(damage: int) -> void:
 	health = max(0, health - damage)
 	play_sound("hurt")
+	if mobile_hud:
+		mobile_hud.flash_damage()
 	if health == 0:
 		health = 100
 		player.position = Vector3(0, 1.1, -7)
@@ -234,24 +282,32 @@ func hurt_player(damage: int) -> void:
 func zombie_defeated(_zombie: Node, kind: int) -> void:
 	kills += 1
 	points += 300 if kind == Zombie.Kind.WAECHTER else 175 if kind == Zombie.Kind.RENNER else 100
-	if mission_stage == 1 and kills >= 5: mission_stage = 2
-	if mission_stage == 4 and kind == Zombie.Kind.WAECHTER: mission_stage = 5
+	if mission_stage == 1 and kills >= 5:
+		mission_stage = 2
+	if mission_stage == 4 and kind == Zombie.Kind.WAECHTER:
+		mission_stage = 5
 	_update_hud()
 
 func _update_mission_by_position() -> void:
 	var z := player.position.z
 	var old := mission_stage
-	if mission_stage == 0 and z > 7: mission_stage = 1
-	elif mission_stage == 2 and z > 39: mission_stage = 3
-	elif mission_stage == 3 and z > 72: mission_stage = 4
-	if mission_stage != old: _update_hud()
+	if mission_stage == 0 and z > 7:
+		mission_stage = 1
+	elif mission_stage == 2 and z > 39:
+		mission_stage = 3
+	elif mission_stage == 3 and z > 72:
+		mission_stage = 4
+	if mission_stage != old:
+		_update_hud()
 
 func toggle_settings() -> void:
 	paused = not paused
 	settings_panel.visible = paused
+	joystick.visible = not paused
 
 func play_sound(kind: String) -> void:
-	if not sound_enabled or sound_playback == null: return
+	if not sound_enabled or sound_playback == null:
+		return
 	var frequency := 85.0 if kind == "shot" else 210.0 if kind == "reload" else 55.0 if kind == "hurt" else 145.0 if kind == "empty" else 420.0
 	var duration := 0.11 if kind == "shot" else 0.08
 	var frames := PackedVector2Array()
@@ -264,25 +320,33 @@ func play_sound(kind: String) -> void:
 	sound_playback.push_buffer(frames)
 
 func _update_hud() -> void:
-	hud.text = "LEBEN %d    MUNITION %d/%d    PUNKTE %d" % [health, ammo, reserve, points]
+	if not mobile_hud:
+		return
+	mobile_hud.set_status(health, ammo, reserve)
 	var objective: String = objectives[min(mission_stage, objectives.size() - 1)]
-	if mission_stage == 1: objective = "Sichere den Weg zur Apotheke (%d/5)." % min(kills, 5)
-	objective_label.text = "MISSION: " + objective
-
-func _button(text: String, position: Vector2, button_size: Vector2, color: Color) -> Button:
-	var button := Button.new()
-	button.text = text; button.position = position; button.size = button_size
-	button.add_theme_font_size_override("font_size", 18)
-	var style := StyleBoxFlat.new(); style.bg_color = color; style.corner_radius_top_left = 14; style.corner_radius_top_right = 14; style.corner_radius_bottom_left = 14; style.corner_radius_bottom_right = 14
-	button.add_theme_stylebox_override("normal", style)
-	return button
+	if mission_stage == 1:
+		objective = "Sichere den Weg zur Apotheke (%d/5)" % min(kills, 5)
+	mobile_hud.set_objective(objective)
 
 func _block(name: String, position: Vector3, size: Vector3, color: Color) -> void:
-	var body := StaticBody3D.new(); body.name = name; body.position = position
-	var mesh := MeshInstance3D.new(); var box := BoxMesh.new(); box.size = size; mesh.mesh = box; mesh.material_override = _material(color, 0.9); body.add_child(mesh)
-	var collision := CollisionShape3D.new(); var shape := BoxShape3D.new(); shape.size = size; collision.shape = shape; body.add_child(collision)
+	var body := StaticBody3D.new()
+	body.name = name
+	body.position = position
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	mesh.material_override = _material(color, 0.9)
+	body.add_child(mesh)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
 	add_child(body)
 
 func _material(color: Color, roughness: float) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new(); material.albedo_color = color; material.roughness = roughness
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = roughness
 	return material
