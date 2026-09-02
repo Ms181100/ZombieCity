@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#07101b"/>
+  <circle cx="256" cy="220" r="128" fill="#31543b"/>
+  <circle cx="205" cy="205" r="18" fill="#d12828"/>
+  <circle cx="307" cy="205" r="18" fill="#d12828"/>
+  <path d="M178 282 Q256 330 334 282" fill="none" stroke="#121a16" stroke-width="22" stroke-linecap="round"/>
+  <path d="M65 408 H447" stroke="#d2c995" stroke-width="18" stroke-dasharray="55 28"/>
+  <text x="256" y="474" fill="#ffffff" font-size="44" font-family="sans-serif" text-anchor="middle" font-weight="700">LAHN</text>
+</svg>
