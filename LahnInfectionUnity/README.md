@@ -11,6 +11,9 @@ Eigenständiger Neubau nach dem GDD: Third-Person Story-Survival in Mittelhessen
 - Rasterinventar mit Gewicht, Stapeln und Haltbarkeit
 - ScriptableObject-Items und Werkbank-/Mobile-Crafting
 - Blutung, Knochenbruch und Infektionsstatus
+- komplette Zustandsfolge der Mission „Das letzte Signal“
+- Loot-, Tür-, Generator-, Funk-, Bett- und Ablenkungs-Interaktionen
+- lokale Safehouse-Spielstände mit atomarem Dateiaustausch
 - URP und AI Navigation als Paketabhängigkeiten
 
 ## Unity-Version
