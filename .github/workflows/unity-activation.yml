@@ -1,19 +1,26 @@
-name: Unity License Activation
+name: Unity CI Readiness
 
 on:
   workflow_dispatch:
 
 jobs:
-  activation:
-    name: Request Unity activation file
+  readiness:
+    name: Check Unity CI requirements
     runs-on: ubuntu-latest
     steps:
-      - name: Request activation file
-        id: activation
-        uses: game-ci/unity-request-activation-file@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Upload activation file
-        uses: actions/upload-artifact@v4
-        with:
-          name: unity-activation-file
-          path: ${{ steps.activation.outputs.filePath }}
+      - name: Explain current Unity Personal activation
+        run: |
+          echo "GameCI no longer supports generating a Personal activation file in GitHub Actions."
+          echo "Current Personal activation requires a Unity Personal .ulf license created through Unity Hub."
+          echo "After that, configure UNITY_LICENSE, UNITY_EMAIL and UNITY_PASSWORD as GitHub Actions secrets."
+          echo "The Android build can then use game-ci/unity-builder@v4."
+
+      - name: Repository readiness
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Unity Android target: de.matze.lahninfection"
+          echo "CI workflow syntax is active."
