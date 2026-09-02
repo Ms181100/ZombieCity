@@ -5,10 +5,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '**/*.gd'
-      - '**/*.tscn'
-      - 'project.godot'
-      - 'export_presets.cfg'
+      - 'LahnInfectionGodot/**'
       - '.github/workflows/godot-android.yml'
 
 permissions:
@@ -51,43 +48,10 @@ jobs:
           cp -a /tmp/templates/templates/. "$HOME/.local/share/godot/export_templates/4.6.1.stable/"
           godot --version
 
-      - name: Ensure Android export preset
+      - name: Validate project scripts
         shell: bash
         working-directory: ${{ steps.project.outputs.dir }}
-        run: |
-          if [ ! -f export_presets.cfg ]; then
-            cat > export_presets.cfg <<'EOF'
-          [preset.0]
-          name="Android"
-          platform="Android"
-          runnable=true
-          advanced_options=false
-          dedicated_server=false
-          custom_features=""
-          export_filter="all_resources"
-          include_filter=""
-          exclude_filter=""
-          export_path="build/Lahn-Infection-debug.apk"
-          script_export_mode=2
-
-          [preset.0.options]
-          custom_template/debug=""
-          custom_template/release=""
-          gradle_build/use_gradle_build=false
-          architectures/armeabi-v7a=false
-          architectures/arm64-v8a=true
-          package/unique_name="de.matze.lahninfection"
-          package/name="Lahn-Infection"
-          version/code=1
-          version/name="0.1.0"
-          screen/immersive_mode=true
-          EOF
-          fi
-
-      - name: Import project
-        shell: bash
-        working-directory: ${{ steps.project.outputs.dir }}
-        run: godot --headless --editor --quit-after 10 || true
+        run: godot --headless --editor --quit-after 10
 
       - name: Export APK
         shell: bash
